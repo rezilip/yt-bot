@@ -1,6 +1,6 @@
 pyTelegramBotAPI==4.21.0
 yt-dlp[default]==2026.7.4
-yt-dlp-ytse
+bgutil-ytdlp-pot-provider
 Flask==3.0.3
 python-dotenv==1.0.1
 gunicorn==22.0.0
