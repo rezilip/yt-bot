@@ -1,5 +1,5 @@
 pyTelegramBotAPI==4.21.0
-yt-dlp==2024.10.7
+yt-dlp==2026.7.4
 Flask==3.0.3
 python-dotenv==1.0.1
 gunicorn==22.0.0
