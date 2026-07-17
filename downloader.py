@@ -51,7 +51,7 @@ def _extra_opts() -> dict:
 
     opts = {
         "nocheckcertificate": True,
-        "extractor_args": {"youtube": {"player_client": player_clients}},
+        "extractor_args": {"youtube": {"player_client": player_clients, "formats": ["sabr"]}},
         "http_headers": {"User-Agent": USER_AGENT},
     }
     if cookies_path:
