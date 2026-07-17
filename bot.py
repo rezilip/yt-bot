@@ -41,7 +41,7 @@ def is_member(uid: int) -> bool:
         return False
 
 
-# ---------- کیبوردها ----------
+# ---------- Ú©ÛŒØ¨ÙˆØ±Ø¯Ù‡Ø§ ----------
 
 def language_kb():
     kb = types.InlineKeyboardMarkup()
@@ -66,7 +66,7 @@ def main_menu_kb(lang):
     return kb
 
 
-# ---------- گیت ورودی: عضویت کانال ----------
+# ---------- Ú¯ÛŒØª ÙˆØ±ÙˆØ¯ÛŒ: Ø¹Ø¶ÙˆÛŒØª Ú©Ø§Ù†Ø§Ù„ ----------
 
 def gate_ok(uid: int) -> bool:
     lang = L(uid)
@@ -80,7 +80,7 @@ def gate_ok(uid: int) -> bool:
     return True
 
 
-# ---------- شروع + انتخاب زبان ----------
+# ---------- Ø´Ø±ÙˆØ¹ + Ø§Ù†ØªØ®Ø§Ø¨ Ø²Ø¨Ø§Ù† ----------
 
 @bot.message_handler(commands=["start"])
 def cmd_start(message):
@@ -129,7 +129,7 @@ def change_language(message):
     bot.send_message(message.from_user.id, i18n.t("choose_language", L(message.from_user.id)), reply_markup=language_kb())
 
 
-# ---------- دانلود یوتیوب ----------
+# ---------- Ø¯Ø§Ù†Ù„ÙˆØ¯ ÛŒÙˆØªÛŒÙˆØ¨ ----------
 
 @bot.message_handler(func=lambda m: m.text in [i18n.t("menu_download", c) for c in i18n.LANGS])
 def ask_for_link(message):
@@ -164,8 +164,8 @@ def handle_youtube_link(message):
     kb = types.InlineKeyboardMarkup()
     for q in info["qualities"]:
         size_txt = f" (~{q['size_mb']:.0f}MB)" if q["size_mb"] else ""
-        kb.add(types.InlineKeyboardButton(f"🎞 {q['height']}p{size_txt}", callback_data=f"dl:{q['height']}"))
-    kb.add(types.InlineKeyboardButton("🎵 MP3", callback_data="dl:audio"))
+        kb.add(types.InlineKeyboardButton(f"ðŸŽž {q['height']}p{size_txt}", callback_data=f"dl:{q['height']}"))
+    kb.add(types.InlineKeyboardButton("ðŸŽµ MP3", callback_data="dl:audio"))
 
     bot.send_message(uid, f"<b>{info['title']}</b>\n\n{i18n.t('choose_quality', lang)}", reply_markup=kb)
 
@@ -208,7 +208,7 @@ def cb_download(call):
         pending_video.pop(uid, None)
 
 
-# ---------- VIP / پشتیبانی / دونیت / راهنما ----------
+# ---------- VIP / Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ / Ø¯ÙˆÙ†ÛŒØª / Ø±Ø§Ù‡Ù†Ù…Ø§ ----------
 
 @bot.message_handler(func=lambda m: m.text in [i18n.t("menu_vip", c) for c in i18n.LANGS])
 def vip_status(message):
@@ -245,7 +245,7 @@ def help_cmd(message):
     bot.send_message(uid, i18n.t("help_text", L(uid)))
 
 
-# ================= پنل ادمین =================
+# ================= Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ† =================
 
 @bot.message_handler(commands=["admin"])
 def admin_panel(message):
@@ -253,13 +253,13 @@ def admin_panel(message):
         return
     bot.send_message(
         message.from_user.id,
-        "🛠 <b>پنل ادمین</b>\n\n"
-        "/stats — آمار کلی\n"
-        "/vip آیدی — VIP کردن کاربر\n"
-        "/unvip آیدی — حذف VIP\n"
-        "/ban آیدی — مسدود کردن\n"
-        "/unban آیدی — رفع مسدودی\n"
-        "/broadcast متن — پیام همگانی",
+        "ðŸ›  <b>Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ†</b>\n\n"
+        "/stats â€” Ø¢Ù…Ø§Ø± Ú©Ù„ÛŒ\n"
+        "/vip Ø¢ÛŒØ¯ÛŒ â€” VIP Ú©Ø±Ø¯Ù† Ú©Ø§Ø±Ø¨Ø±\n"
+        "/unvip Ø¢ÛŒØ¯ÛŒ â€” Ø­Ø°Ù VIP\n"
+        "/ban Ø¢ÛŒØ¯ÛŒ â€” Ù…Ø³Ø¯ÙˆØ¯ Ú©Ø±Ø¯Ù†\n"
+        "/unban Ø¢ÛŒØ¯ÛŒ â€” Ø±ÙØ¹ Ù…Ø³Ø¯ÙˆØ¯ÛŒ\n"
+        "/broadcast Ù…ØªÙ† â€” Ù¾ÛŒØ§Ù… Ù‡Ù…Ú¯Ø§Ù†ÛŒ",
     )
 
 
@@ -268,7 +268,7 @@ def admin_stats(message):
     if not is_admin(message.from_user.id):
         return
     s = db.stats()
-    bot.send_message(message.from_user.id, f"👥 کل: {s['total']}\n👑 VIP: {s['vip']}\n🚫 مسدود: {s['banned']}")
+    bot.send_message(message.from_user.id, f"ðŸ‘¥ Ú©Ù„: {s['total']}\nðŸ‘‘ VIP: {s['vip']}\nðŸš« Ù…Ø³Ø¯ÙˆØ¯: {s['banned']}")
 
 
 @bot.message_handler(commands=["vip", "unvip", "ban", "unban"])
@@ -277,7 +277,7 @@ def admin_actions(message):
         return
     parts = message.text.split()
     if len(parts) != 2:
-        bot.send_message(message.from_user.id, "فرمت: /vip آیدی_عددی")
+        bot.send_message(message.from_user.id, "ÙØ±Ù…Øª: /vip Ø¢ÛŒØ¯ÛŒ_Ø¹Ø¯Ø¯ÛŒ")
         return
     target = int(parts[1])
     cmd = parts[0].replace("/", "")
@@ -286,7 +286,7 @@ def admin_actions(message):
         "ban": {"is_banned": 1}, "unban": {"is_banned": 0},
     }
     db.update_user(target, **field_map[cmd])
-    bot.send_message(message.from_user.id, "انجام شد ✅")
+    bot.send_message(message.from_user.id, "Ø§Ù†Ø¬Ø§Ù… Ø´Ø¯ âœ…")
 
 
 @bot.message_handler(commands=["broadcast"])
@@ -295,7 +295,7 @@ def admin_broadcast(message):
         return
     text = message.text.replace("/broadcast", "", 1).strip()
     if not text:
-        bot.send_message(message.from_user.id, "فرمت: /broadcast متن پیام")
+        bot.send_message(message.from_user.id, "ÙØ±Ù…Øª: /broadcast Ù…ØªÙ† Ù¾ÛŒØ§Ù…")
         return
     sent = 0
     for uid in db.all_active_user_ids():
@@ -304,8 +304,14 @@ def admin_broadcast(message):
             sent += 1
         except Exception:
             pass
-    bot.send_message(message.from_user.id, f"برای {sent} کاربر ارسال شد ✅")
+    bot.send_message(message.from_user.id, f"Ø¨Ø±Ø§ÛŒ {sent} Ú©Ø§Ø±Ø¨Ø± Ø§Ø±Ø³Ø§Ù„ Ø´Ø¯ âœ…")
 
 
 def start_polling():
-    bot.infinity_polling(skip_pending=True)
+    import time
+    while True:
+        try:
+            bot.infinity_polling(skip_pending=True, timeout=30, long_polling_timeout=30)
+        except Exception as e:
+            print(f"[polling crashed, retrying in 10s] {e}")
+            time.sleep(10)
