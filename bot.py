@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import html
 from dotenv import load_dotenv
 import telebot
 from telebot import types
@@ -18,6 +19,15 @@ FREE_DAILY_LIMIT = int(os.getenv("FREE_DAILY_LIMIT", "5"))
 SUPPORT_USERNAME = os.getenv("SUPPORT_USERNAME", "@irezafattahi")
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
+
+
+def esc(text) -> str:
+    """
+    هر متنی که از بیرون میاد (عنوان ویدیو، پیام کاربر، اسم کاربر) قبل از قرار گرفتن
+    تو پیام HTML باید escape بشه، وگرنه اگه شامل &, <, > باشه تلگرام کل پیام رو
+    رد می‌کنه و کاربر هیچ پاسخی نمی‌بینه.
+    """
+    return html.escape(str(text or ""))
 db.init_db()
 
 pending_video = {}   # telegram_id -> {"url":..., "title":..., "qualities":[...]}
@@ -41,7 +51,7 @@ def is_member(uid: int) -> bool:
         return False
 
 
-# ---------- Ú©ÛŒØ¨ÙˆØ±Ø¯Ù‡Ø§ ----------
+# ---------- کیبوردها ----------
 
 def language_kb():
     kb = types.InlineKeyboardMarkup()
@@ -66,7 +76,7 @@ def main_menu_kb(lang):
     return kb
 
 
-# ---------- Ú¯ÛŒØª ÙˆØ±ÙˆØ¯ÛŒ: Ø¹Ø¶ÙˆÛŒØª Ú©Ø§Ù†Ø§Ù„ ----------
+# ---------- گیت ورودی: عضویت کانال ----------
 
 def gate_ok(uid: int) -> bool:
     lang = L(uid)
@@ -80,7 +90,7 @@ def gate_ok(uid: int) -> bool:
     return True
 
 
-# ---------- Ø´Ø±ÙˆØ¹ + Ø§Ù†ØªØ®Ø§Ø¨ Ø²Ø¨Ø§Ù† ----------
+# ---------- شروع + انتخاب زبان ----------
 
 @bot.message_handler(commands=["start"])
 def cmd_start(message):
@@ -129,7 +139,7 @@ def change_language(message):
     bot.send_message(message.from_user.id, i18n.t("choose_language", L(message.from_user.id)), reply_markup=language_kb())
 
 
-# ---------- Ø¯Ø§Ù†Ù„ÙˆØ¯ ÛŒÙˆØªÛŒÙˆØ¨ ----------
+# ---------- دانلود یوتیوب ----------
 
 @bot.message_handler(func=lambda m: m.text in [i18n.t("menu_download", c) for c in i18n.LANGS])
 def ask_for_link(message):
@@ -164,10 +174,10 @@ def handle_youtube_link(message):
     kb = types.InlineKeyboardMarkup()
     for q in info["qualities"]:
         size_txt = f" (~{q['size_mb']:.0f}MB)" if q["size_mb"] else ""
-        kb.add(types.InlineKeyboardButton(f"ðŸŽž {q['height']}p{size_txt}", callback_data=f"dl:{q['height']}"))
-    kb.add(types.InlineKeyboardButton("ðŸŽµ MP3", callback_data="dl:audio"))
+        kb.add(types.InlineKeyboardButton(f"🎞 {q['height']}p{size_txt}", callback_data=f"dl:{q['height']}"))
+    kb.add(types.InlineKeyboardButton("🎵 MP3", callback_data="dl:audio"))
 
-    bot.send_message(uid, f"<b>{info['title']}</b>\n\n{i18n.t('choose_quality', lang)}", reply_markup=kb)
+    bot.send_message(uid, f"<b>{esc(info['title'])}</b>\n\n{i18n.t('choose_quality', lang)}", reply_markup=kb)
 
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("dl:"))
@@ -208,7 +218,7 @@ def cb_download(call):
         pending_video.pop(uid, None)
 
 
-# ---------- VIP / Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ / Ø¯ÙˆÙ†ÛŒØª / Ø±Ø§Ù‡Ù†Ù…Ø§ ----------
+# ---------- VIP / پشتیبانی / دونیت / راهنما ----------
 
 @bot.message_handler(func=lambda m: m.text in [i18n.t("menu_vip", c) for c in i18n.LANGS])
 def vip_status(message):
@@ -245,7 +255,7 @@ def help_cmd(message):
     bot.send_message(uid, i18n.t("help_text", L(uid)))
 
 
-# ================= Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ† =================
+# ================= پنل ادمین =================
 
 @bot.message_handler(commands=["admin"])
 def admin_panel(message):
@@ -253,13 +263,13 @@ def admin_panel(message):
         return
     bot.send_message(
         message.from_user.id,
-        "ðŸ›  <b>Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ†</b>\n\n"
-        "/stats â€” Ø¢Ù…Ø§Ø± Ú©Ù„ÛŒ\n"
-        "/vip Ø¢ÛŒØ¯ÛŒ â€” VIP Ú©Ø±Ø¯Ù† Ú©Ø§Ø±Ø¨Ø±\n"
-        "/unvip Ø¢ÛŒØ¯ÛŒ â€” Ø­Ø°Ù VIP\n"
-        "/ban Ø¢ÛŒØ¯ÛŒ â€” Ù…Ø³Ø¯ÙˆØ¯ Ú©Ø±Ø¯Ù†\n"
-        "/unban Ø¢ÛŒØ¯ÛŒ â€” Ø±ÙØ¹ Ù…Ø³Ø¯ÙˆØ¯ÛŒ\n"
-        "/broadcast Ù…ØªÙ† â€” Ù¾ÛŒØ§Ù… Ù‡Ù…Ú¯Ø§Ù†ÛŒ",
+        "🛠 <b>پنل ادمین</b>\n\n"
+        "<code>/stats</code> — آمار کلی\n"
+        "<code>/vip آیدی</code> — VIP کردن کاربر\n"
+        "<code>/unvip آیدی</code> — حذف VIP\n"
+        "<code>/ban آیدی</code> — مسدود کردن\n"
+        "<code>/unban آیدی</code> — رفع مسدودی\n"
+        "<code>/broadcast متن</code> — پیام همگانی",
     )
 
 
@@ -268,7 +278,7 @@ def admin_stats(message):
     if not is_admin(message.from_user.id):
         return
     s = db.stats()
-    bot.send_message(message.from_user.id, f"ðŸ‘¥ Ú©Ù„: {s['total']}\nðŸ‘‘ VIP: {s['vip']}\nðŸš« Ù…Ø³Ø¯ÙˆØ¯: {s['banned']}")
+    bot.send_message(message.from_user.id, f"👥 کل: {s['total']}\n👑 VIP: {s['vip']}\n🚫 مسدود: {s['banned']}")
 
 
 @bot.message_handler(commands=["vip", "unvip", "ban", "unban"])
@@ -277,7 +287,7 @@ def admin_actions(message):
         return
     parts = message.text.split()
     if len(parts) != 2:
-        bot.send_message(message.from_user.id, "ÙØ±Ù…Øª: /vip Ø¢ÛŒØ¯ÛŒ_Ø¹Ø¯Ø¯ÛŒ")
+        bot.send_message(message.from_user.id, "فرمت: /vip آیدی_عددی")
         return
     target = int(parts[1])
     cmd = parts[0].replace("/", "")
@@ -286,7 +296,7 @@ def admin_actions(message):
         "ban": {"is_banned": 1}, "unban": {"is_banned": 0},
     }
     db.update_user(target, **field_map[cmd])
-    bot.send_message(message.from_user.id, "Ø§Ù†Ø¬Ø§Ù… Ø´Ø¯ âœ…")
+    bot.send_message(message.from_user.id, "انجام شد ✅")
 
 
 @bot.message_handler(commands=["broadcast"])
@@ -295,7 +305,7 @@ def admin_broadcast(message):
         return
     text = message.text.replace("/broadcast", "", 1).strip()
     if not text:
-        bot.send_message(message.from_user.id, "ÙØ±Ù…Øª: /broadcast Ù…ØªÙ† Ù¾ÛŒØ§Ù…")
+        bot.send_message(message.from_user.id, "فرمت: /broadcast متن پیام")
         return
     sent = 0
     for uid in db.all_active_user_ids():
@@ -304,7 +314,7 @@ def admin_broadcast(message):
             sent += 1
         except Exception:
             pass
-    bot.send_message(message.from_user.id, f"Ø¨Ø±Ø§ÛŒ {sent} Ú©Ø§Ø±Ø¨Ø± Ø§Ø±Ø³Ø§Ù„ Ø´Ø¯ âœ…")
+    bot.send_message(message.from_user.id, f"برای {sent} کاربر ارسال شد ✅")
 
 
 def start_polling():
