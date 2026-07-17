@@ -46,8 +46,12 @@ def fetch_formats(url: str):
     تا فقط چند گزینه‌ی معنادار به کاربر نشون بدیم، نه ده‌ها فرمت خام).
     """
     ydl_opts = {"quiet": True, "skip_download": True, "noplaylist": True, **_extra_opts()}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except Exception as e:
+        print(f"[fetch_formats error] {e}")
+        raise
 
     title = info.get("title", "video")
     duration = info.get("duration", 0)
@@ -102,10 +106,12 @@ def download_video(url: str, height: int | None) -> tuple[str | None, str]:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
     except yt_dlp.utils.DownloadError as e:
+        print(f"[download_video error] {e}")
         if "max-filesize" in str(e).lower() or "File is larger" in str(e):
             return None, "too_large"
         return None, "error"
-    except Exception:
+    except Exception as e:
+        print(f"[download_video error] {e}")
         return None, "error"
 
     # پیدا کردن فایل خروجی واقعی (چون پسوند نهایی از قبل معلوم نیست)
