@@ -17,7 +17,8 @@ RUN curl -fsSL https://deno.land/install.sh | sh \
 RUN git clone --depth 1 --branch 1.3.1 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git /opt/bgutil-ytdlp-pot-provider \
     && cd /opt/bgutil-ytdlp-pot-provider/server \
     && npm ci \
-    && npx tsc
+    && npx tsc \
+    && deno install --allow-scripts=npm:canvas --frozen
 
 WORKDIR /app
 COPY requirements.txt .
