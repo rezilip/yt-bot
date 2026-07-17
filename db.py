@@ -1,20 +1,24 @@
-import sqlite3
+import os
 import datetime
+import psycopg2
+import psycopg2.extras
 
-DB_PATH = "bot.db"
+# آدرس اتصال به دیتابیس Postgres (از Neon یا Supabase می‌گیری)
+# باید به صورت Environment Variable با اسم DATABASE_URL ست بشه
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 
 def get_conn():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     return conn
 
 
 def init_db():
     conn = get_conn()
-    conn.executescript("""
+    cur = conn.cursor()
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
-        telegram_id INTEGER PRIMARY KEY,
+        telegram_id BIGINT PRIMARY KEY,
         username TEXT,
         language TEXT,
         is_vip INTEGER DEFAULT 0,
@@ -25,6 +29,7 @@ def init_db():
     );
     """)
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -32,16 +37,20 @@ def today():
     return datetime.date.today().isoformat()
 
 
-def get_or_create_user(telegram_id: int, username: str | None):
+def get_or_create_user(telegram_id: int, username):
     conn = get_conn()
-    row = conn.execute("SELECT * FROM users WHERE telegram_id=?", (telegram_id,)).fetchone()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE telegram_id=%s", (telegram_id,))
+    row = cur.fetchone()
     if row is None:
-        conn.execute(
-            "INSERT INTO users (telegram_id, username, last_reset_date, joined_at) VALUES (?, ?, ?, ?)",
+        cur.execute(
+            "INSERT INTO users (telegram_id, username, last_reset_date, joined_at) VALUES (%s, %s, %s, %s)",
             (telegram_id, username, today(), datetime.datetime.utcnow().isoformat()),
         )
         conn.commit()
-        row = conn.execute("SELECT * FROM users WHERE telegram_id=?", (telegram_id,)).fetchone()
+        cur.execute("SELECT * FROM users WHERE telegram_id=%s", (telegram_id,))
+        row = cur.fetchone()
+    cur.close()
     conn.close()
     return row
 
@@ -50,15 +59,20 @@ def update_user(telegram_id: int, **fields):
     if not fields:
         return
     conn = get_conn()
-    set_clause = ", ".join(f"{k}=?" for k in fields)
-    conn.execute(f"UPDATE users SET {set_clause} WHERE telegram_id=?", (*fields.values(), telegram_id))
+    cur = conn.cursor()
+    set_clause = ", ".join(f"{k}=%s" for k in fields)
+    cur.execute(f"UPDATE users SET {set_clause} WHERE telegram_id=%s", (*fields.values(), telegram_id))
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def get_user(telegram_id: int):
     conn = get_conn()
-    row = conn.execute("SELECT * FROM users WHERE telegram_id=?", (telegram_id,)).fetchone()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE telegram_id=%s", (telegram_id,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return row
 
@@ -71,22 +85,32 @@ def reset_quota_if_new_day(telegram_id: int):
 
 def increment_download_count(telegram_id: int):
     conn = get_conn()
-    conn.execute("UPDATE users SET downloads_today = downloads_today + 1 WHERE telegram_id=?", (telegram_id,))
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET downloads_today = downloads_today + 1 WHERE telegram_id=%s", (telegram_id,))
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def all_active_user_ids():
     conn = get_conn()
-    rows = conn.execute("SELECT telegram_id FROM users WHERE is_banned=0").fetchall()
+    cur = conn.cursor()
+    cur.execute("SELECT telegram_id FROM users WHERE is_banned=0")
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
     return [r["telegram_id"] for r in rows]
 
 
 def stats():
     conn = get_conn()
-    total = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
-    vip = conn.execute("SELECT COUNT(*) c FROM users WHERE is_vip=1").fetchone()["c"]
-    banned = conn.execute("SELECT COUNT(*) c FROM users WHERE is_banned=1").fetchone()["c"]
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) c FROM users")
+    total = cur.fetchone()["c"]
+    cur.execute("SELECT COUNT(*) c FROM users WHERE is_vip=1")
+    vip = cur.fetchone()["c"]
+    cur.execute("SELECT COUNT(*) c FROM users WHERE is_banned=1")
+    banned = cur.fetchone()["c"]
+    cur.close()
     conn.close()
     return {"total": total, "vip": vip, "banned": banned}
