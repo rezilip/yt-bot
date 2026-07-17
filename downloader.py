@@ -7,15 +7,28 @@ MAX_FILE_MB = int(os.getenv("MAX_FILE_MB", "500"))
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# مسیر فایل کوکی (برای دور زدن تشخیص ربات یوتیوب روی آی‌پی سرورهای ابری مثل Render).
-# اگه فایل موجود نباشه، yt-dlp بدون کوکی تلاش می‌کنه (که رو Render معمولاً fail می‌شه).
-COOKIES_PATH = os.getenv("COOKIES_PATH", "cookies.txt")
+# مسیر فایل کوکی. Render فایل‌های Secret File رو تو /etc/secrets/<filename> مانت می‌کنه،
+# نه کنار خود کد - قبلاً همینجا اشتباه بود و باعث می‌شد کوکی اصلاً پیدا نشه.
+COOKIES_PATH = os.getenv("COOKIES_PATH", "/etc/secrets/cookies.txt")
+
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 
-def _cookie_opts() -> dict:
+def _extra_opts() -> dict:
+    """
+    تنظیمات مشترک برای دور زدن محدودیت‌های یوتیوب روی آی‌پی سرورهای ابری:
+    - کوکی یه اکانت واقعی (اگه فایلش موجود باشه)
+    - کلاینت android_vr در اولویت اول: در حال حاضر بهترین راه برای گرفتن کیفیت‌های
+      720/1080 بدون نیاز به تایید امنیتی یا لاگین
+    """
+    opts = {
+        "nocheckcertificate": True,
+        "extractor_args": {"youtube": {"player_client": ["android_vr", "tvhtml5", "android"]}},
+        "http_headers": {"User-Agent": USER_AGENT},
+    }
     if os.path.exists(COOKIES_PATH):
-        return {"cookiefile": COOKIES_PATH}
-    return {}
+        opts["cookiefile"] = COOKIES_PATH
+    return opts
 
 
 YOUTUBE_REGEX = re.compile(
@@ -32,7 +45,7 @@ def fetch_formats(url: str):
     اطلاعات ویدیو و لیست کوتاهی از کیفیت‌های قابل‌انتخاب (خودمون فیلترش می‌کنیم
     تا فقط چند گزینه‌ی معنادار به کاربر نشون بدیم، نه ده‌ها فرمت خام).
     """
-    ydl_opts = {"quiet": True, "skip_download": True, "noplaylist": True, **_cookie_opts()}
+    ydl_opts = {"quiet": True, "skip_download": True, "noplaylist": True, **_extra_opts()}
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
@@ -72,7 +85,7 @@ def download_video(url: str, height: int | None) -> tuple[str | None, str]:
                 "preferredquality": "192",
             }],
             "max_filesize": MAX_FILE_MB * 1_048_576,
-            **_cookie_opts(),
+            **_extra_opts(),
         }
     else:
         ydl_opts = {
@@ -82,7 +95,7 @@ def download_video(url: str, height: int | None) -> tuple[str | None, str]:
             "merge_output_format": "mp4",
             "outtmpl": outtmpl,
             "max_filesize": MAX_FILE_MB * 1_048_576,
-            **_cookie_opts(),
+            **_extra_opts(),
         }
 
     try:
