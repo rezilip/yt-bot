@@ -35,7 +35,7 @@ user_state = {}       # telegram_id -> "awaiting_broadcast"
 
 
 def L(uid: int) -> str:
-    user = db.get_user(uid)
+    user = db.get_or_create_user(uid, None)
     return (user["language"] if user and user["language"] else "en")
 
 
@@ -83,7 +83,7 @@ def gate_ok(uid: int) -> bool:
     if not is_member(uid):
         bot.send_message(uid, i18n.t("join_required", lang), reply_markup=join_kb(lang))
         return False
-    user = db.get_user(uid)
+    user = db.get_or_create_user(uid, None)
     if user and user["is_banned"]:
         bot.send_message(uid, i18n.t("banned", lang))
         return False
@@ -157,7 +157,7 @@ def handle_youtube_link(message):
         return
 
     db.reset_quota_if_new_day(uid)
-    user = db.get_user(uid)
+    user = db.get_or_create_user(uid, message.from_user.username)
     if not user["is_vip"] and user["downloads_today"] >= FREE_DAILY_LIMIT:
         bot.send_message(uid, i18n.t("quota_reached", lang))
         return
@@ -226,7 +226,7 @@ def vip_status(message):
     if not gate_ok(uid):
         return
     lang = L(uid)
-    user = db.get_user(uid)
+    user = db.get_or_create_user(uid, message.from_user.username)
     key = "vip_status_vip" if user["is_vip"] else "vip_status_free"
     bot.send_message(uid, i18n.t(key, lang))
 
