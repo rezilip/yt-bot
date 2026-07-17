@@ -51,7 +51,11 @@ def _extra_opts() -> dict:
 
     opts = {
         "nocheckcertificate": True,
-        "extractor_args": {"youtube": {"player_client": player_clients, "formats": ["sabr"]}},
+        "extractor_args": {
+            "youtube": {"player_client": player_clients},
+            # مسیر سرویس تولید PO Token که تو Dockerfile ساخته و build شده.
+            "youtubepot-bgutilscript": {"server_home": ["/opt/bgutil-ytdlp-pot-provider/server"]},
+        },
         "http_headers": {"User-Agent": USER_AGENT},
     }
     if cookies_path:
