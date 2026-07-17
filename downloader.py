@@ -7,6 +7,17 @@ MAX_FILE_MB = int(os.getenv("MAX_FILE_MB", "500"))
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+# مسیر فایل کوکی (برای دور زدن تشخیص ربات یوتیوب روی آی‌پی سرورهای ابری مثل Render).
+# اگه فایل موجود نباشه، yt-dlp بدون کوکی تلاش می‌کنه (که رو Render معمولاً fail می‌شه).
+COOKIES_PATH = os.getenv("COOKIES_PATH", "cookies.txt")
+
+
+def _cookie_opts() -> dict:
+    if os.path.exists(COOKIES_PATH):
+        return {"cookiefile": COOKIES_PATH}
+    return {}
+
+
 YOUTUBE_REGEX = re.compile(
     r"(youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/)"
 )
@@ -21,7 +32,7 @@ def fetch_formats(url: str):
     اطلاعات ویدیو و لیست کوتاهی از کیفیت‌های قابل‌انتخاب (خودمون فیلترش می‌کنیم
     تا فقط چند گزینه‌ی معنادار به کاربر نشون بدیم، نه ده‌ها فرمت خام).
     """
-    ydl_opts = {"quiet": True, "skip_download": True, "noplaylist": True}
+    ydl_opts = {"quiet": True, "skip_download": True, "noplaylist": True, **_cookie_opts()}
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
@@ -61,6 +72,7 @@ def download_video(url: str, height: int | None) -> tuple[str | None, str]:
                 "preferredquality": "192",
             }],
             "max_filesize": MAX_FILE_MB * 1_048_576,
+            **_cookie_opts(),
         }
     else:
         ydl_opts = {
@@ -70,6 +82,7 @@ def download_video(url: str, height: int | None) -> tuple[str | None, str]:
             "merge_output_format": "mp4",
             "outtmpl": outtmpl,
             "max_filesize": MAX_FILE_MB * 1_048_576,
+            **_cookie_opts(),
         }
 
     try:
