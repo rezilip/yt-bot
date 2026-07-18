@@ -20,6 +20,11 @@ WRITABLE_COOKIES_PATH = "/tmp/cookies_working.txt"
 
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
+# آدرس پروکسی مسکونی (مثلاً از Webshare). با فرمت:
+# http://USERNAME:PASSWORD@HOST:PORT
+# از یه Environment Variable خونده می‌شه، نه این‌که تو کد هاردکد بشه.
+PROXY_URL = os.getenv("PROXY_URL")
+
 # کلاینت‌های موبایل: هیچ‌وقت SABR نمی‌گیرن و کیفیت بالا (720/1080) رو بدون
 # کوکی می‌دن - ولی اصلاً کوکی رو قبول نمی‌کنن (اگه کوکی بدیم، yt-dlp خودش
 # کاملاً حذفشون می‌کنه، حتی اگه اول لیست باشن).
@@ -59,6 +64,8 @@ def _base_opts(use_cookies: bool) -> dict:
             "youtubepot-bgutilscript": {"server_home": ["/opt/bgutil-ytdlp-pot-provider/server"]},
         },
     }
+    if PROXY_URL:
+        opts["proxy"] = PROXY_URL
     if use_cookies:
         cookies_path = _get_usable_cookies_path()
         if cookies_path:
